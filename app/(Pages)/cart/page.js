@@ -5,109 +5,78 @@ import SkeletonLoader from "../../(Components)/SkeletonLoader";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { useDispatch } from "react-redux";
-import { login } from "@/app/(redux)/(store)/store";
-
+import { useDispatch, useSelector } from "react-redux";
+import { login } from "@/app/(redux)/(slices)/authSlice";
+import {
+  fetchCart,
+  removeItem,
+  confirmOrder,
+} from "@/app/(redux)/(slices)/cartSlice";
 export default function CartPage() {
-  const [cart, setCart] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const dispatch = useDispatch();
+  const { error, loading, cart } = useSelector((state) => state.cart);
 
   useEffect(() => {
-    const fetchCart = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("You must be logged in to view your cart.");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const response = await axios.get("/api/getUserCart", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setCart(response.data.cart);
-      } catch (error) {
-        setError(
-          error.response?.data?.message || "Failed to fetch cart details."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCart();
-  }, []);
+    dispatch(fetchCart());
+  }, [dispatch]);
 
   const handleQuantityChange = (itemId, newQuantity) => {
-    setCart((prevCart) => {
-      const updatedItems = prevCart.items.map((item) =>
+    if (newQuantity < 1) return; 
+
+    const updatedCart = {
+      ...cart,
+      items: cart.items.map((item) =>
         item._id === itemId ? { ...item, quantity: newQuantity } : item
-      );
-      return { ...prevCart, items: updatedItems };
+      ),
+    };
+
+    dispatch({
+      type: "cart/updateCartLocally",
+      payload: updatedCart,
     });
   };
 
   const handleRemoveItem = async (itemId) => {
-    const token = localStorage.getItem("token");
     try {
-      const response = await axios.post(
-        `/api/removeItemFromCart`,
-        { itemId },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (response.status === 200) {
-        Swal.fire({
-          position: "center",
-          icon: "success",
-          title: "Product removed successfully",
-          showConfirmButton: false,
-          timer: 1000,
+      dispatch(removeItem(itemId))
+        .unwrap()
+        .then(() => {
+          Swal.fire({
+            position: "center",
+            icon: "success",
+            title: "Product removed successfully",
+            showConfirmButton: false,
+            timer: 1000,
+          });
         });
-
-        setCart((prevCart) => ({
-          ...prevCart,
-          items: prevCart.items.filter((item) => item._id !== itemId),
-        }));
-      }
     } catch (error) {
-      setError(error.response?.data?.message || "Failed to remove item.");
+      Swal.fire("Error", error || "Failed to remove item", "error");
     }
   };
 
   const handleCheckout = async () => {
-    const token = localStorage.getItem("token");
+    if (!cart?.items || cart.items.length === 0) return;
     try {
-      const response = await axios.post(
-        "/api/confirmOrder",
-        { items: cart.items },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      Swal.fire({
-        position: "center",
-        icon: "success",
-        title: response.data.message,
-        text: `Remaining Balance: $${response.data.remainingBalance.toFixed(
-          2
-        )}`,
-        showConfirmButton: true,
-        confirmButtonColor: "#0d6efd",
-      });
-      localStorage.setItem("balance", response.data.remainingBalance);
-      dispatch(
-        login({
-          token: localStorage.getItem("token"),
-          role: localStorage.getItem("role"),
-          balance: response.data.remainingBalance,
-        })
-      );
-      setCart(null);
+      dispatch(confirmOrder(cart.items))
+        .unwrap()
+        .then((response) => {
+          Swal.fire({
+            position: "center",
+            icon: "success",
+            title: response.message,
+            text: `Remaining Balance: $${response}`,
+            confirmButtonColor: "#0d6efd",
+          });
+
+          localStorage.setItem("balance", response);
+          dispatch(
+            login({
+              token: localStorage.getItem("token"),
+              role: localStorage.getItem("role"),
+              balance: response,
+            })
+          );
+        });
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -118,7 +87,7 @@ export default function CartPage() {
   };
 
   const calculateTotalPrice = () => {
-    return cart.items.reduce((total, item) => {
+    return cart?.items?.reduce((total, item) => {
       return total + item.quantity * item.productId.price;
     }, 0);
   };

@@ -36,7 +36,7 @@ export async function POST(req) {
     }
 
     const uploadDir = path.join(process.cwd(), "public", "uploads");
-    const fileName = `${Date.now()}-${image.name}`;
+    const fileName = `${image.name}`;
     const absoluteFilePath = path.join(uploadDir, fileName);
 
     const fileBuffer = await image.arrayBuffer();

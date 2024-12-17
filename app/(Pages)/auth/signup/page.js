@@ -1,26 +1,37 @@
 "use client";
+import { signup } from "@/app/(redux)/(slices)/authSlice";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useDispatch } from "react-redux";
 import Swal from "sweetalert2";
 
 export default function SignupPage() {
+  const navigate = useRouter();
+  const dispatch = useDispatch();
   const [data, setData] = useState({
     name: "",
     email: "",
     password: "",
   });
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("/api/auth/register", data).then(() => {
-        Swal.fire({
-          position: "center",
-          icon: "success",
-          title: "Account Created Successfully",
-          showConfirmButton: false,
-          timer: 1000,
-        });
+      const response = await axios.post("/api/auth/register", data);
+      const { token } = response.data;
+      const { role, balance } = response.data.user;
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", role);
+      localStorage.setItem("balance", balance);
+      dispatch(signup({ token, role, balance }));
+      Swal.fire({
+        position: "center",
+        icon: "success",
+        title: "Account Created Successfully",
+        showConfirmButton: false,
+        timer: 1000,
+      }).then(() => {
+        navigate.push("/");
       });
     } catch (error) {
       Swal.fire({
@@ -35,7 +46,10 @@ export default function SignupPage() {
 
   return (
     <div className="d-flex align-items-center justify-content-center vh-100 bg-light">
-      <div className="card shadow p-4" style={{ maxWidth: "400px", width: "100%" }}>
+      <div
+        className="card shadow p-4"
+        style={{ maxWidth: "400px", width: "100%" }}
+      >
         <h3 className="text-center mb-4 text-primary">Create Account</h3>
         <p className="text-center text-muted mb-4">
           Join us and start your journey today!

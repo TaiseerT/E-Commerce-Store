@@ -4,8 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Swal from "sweetalert2";
 import { useDispatch } from "react-redux";
-import { login } from "@/app/(redux)/(store)/store";
-import Link from "next/link";
+import { login } from "@/app/(redux)/(slices)/authSlice";
 
 export default function LoginPage() {
   const navigate = useRouter();

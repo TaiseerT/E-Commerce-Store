@@ -6,6 +6,7 @@ import axios from "axios";
 import { useParams } from "next/navigation";
 import Swal from "sweetalert2";
 import SkeletonLoader from "@/app/(Components)/SkeletonLoader";
+import { useSelector } from "react-redux";
 
 export default function ProductDetailsPage() {
   const [product, setProduct] = useState(null);
@@ -13,10 +14,9 @@ export default function ProductDetailsPage() {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [error, setError] = useState("");
   const { id } = useParams();
-  let role;
+  const role = useSelector((state) => state.auth.role);
   useEffect(() => {
     if (!id) return;
-    role = localStorage.getItem("role");
     const fetchProduct = async () => {
       try {
         const response = await axios.get(`/api/product/getProductById/${id}`);
@@ -133,20 +133,23 @@ export default function ProductDetailsPage() {
                   <h3 className="card-text text-success fw-semibold">
                     ${product.price.toFixed(2)}
                   </h3>
-                  <h5 className="text-secondary">
-                    <strong>Stock:</strong> {product.quantity}
-                  </h5>
+                  {product.quantity === 0 ? (
+                    <h5 className="text-secondary">
+                      <strong>Stock:</strong> Out of stock
+                    </h5>
+                  ) : (
+                    <h5 className="text-secondary">
+                      <strong>Stock:</strong> {product.quantity}
+                    </h5>
+                  )}
                 </div>
-                {role === "admin" ? (
-                  ""
-                ) : (
-                  <button
-                    className="btn btn-primary btn-lg w-100"
-                    onClick={handleAddToCart}
-                  >
-                    Add to Cart
-                  </button>
-                )}
+                <button
+                  className="btn btn-primary btn-lg w-100"
+                  onClick={handleAddToCart}
+                  disabled={product.quantity === 0 || role === "admin"}
+                >
+                  Add to Cart
+                </button>
               </div>
             </div>
 

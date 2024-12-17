@@ -2,10 +2,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import { login, logout } from "../(redux)/(store)/store";
 import { useEffect, useState } from "react";
 import { FaShoppingBag, FaUserCircle, FaSignOutAlt } from "react-icons/fa";
 import { FiMenu } from "react-icons/fi";
+import { login, logout } from "../(redux)/(slices)/authSlice";
 
 export default function Navbar() {
   const pathname = usePathname();

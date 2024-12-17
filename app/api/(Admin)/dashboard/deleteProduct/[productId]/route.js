@@ -1,6 +1,8 @@
 import { canManageProduct } from "@/app/api/middlewares/canManageProduct.middleware";
 import connectDB from "../../../../../utils/db";
 import { Product } from "../../../../models/Product";
+import fs from "fs/promises";
+import path from "path";
 
 export async function DELETE(req) {
   try {
@@ -14,10 +16,23 @@ export async function DELETE(req) {
         status: 404,
       });
     }
-    const updatedProduct = await Product.findByIdAndDelete(productId);
+
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    const imagePath = path.join(uploadDir, product.image); 
+
+    await Product.findByIdAndDelete(productId);
+
+    try {
+      await fs.access(imagePath); 
+      await fs.unlink(imagePath); 
+      console.log("Image deleted:", imagePath);
+    } catch (fileError) {
+      console.warn("Image file not found or already deleted:", imagePath);
+    }
+
     return new Response(
       JSON.stringify({
-        message: "Product deleted successfully",
+        message: "Product and its image deleted successfully",
       }),
       { status: 200 }
     );

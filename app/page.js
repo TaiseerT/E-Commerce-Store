@@ -2,7 +2,6 @@
 import Navbar from "../app/(Components)/Navbar";
 import Footer from "../app/(Components)/Footer";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import HeroSection from "./(Components)/(Homepage)/heroSection";
 import MoreSection from "./(Components)/(Homepage)/moreSection";
 import Reviews from "./(Components)/(Homepage)/reviews";
@@ -10,48 +9,32 @@ import Banner from "./(Components)/(Homepage)/banner";
 import Products from "./(Components)/(Homepage)/productsSection";
 import Categories from "./(Components)/(Homepage)/categoriesSection";
 import SearchBar from "./(Components)/(Homepage)/searchBar";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProducts } from "./(redux)/(slices)/productsSlice";
+import { fetchCategories } from "./(redux)/(slices)/categoriesSlice";
 
 export default function HomePage() {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const dispatch = useDispatch();
+  const {
+    products,
+    loading: productsLoading,
+    error: productsError,
+  } = useSelector((state) => state.products);
+  const {
+    categories,
+    loading: categoriesLoading,
+    error: categoriesError,
+  } = useSelector((state) => state.categories);
 
   useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, []);
-
-  const fetchProducts = async (query = "") => {
-    setLoading(true);
-    setError("");
-    try {
-      const response = await axios.get(
-        `/api/product/getProducts?search=${query}`
-      );
-      setProducts(response.data.products);
-    } catch (error) {
-      console.error(error);
-      setError("Failed to load products. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const response = await axios.get("/api/product/getCategories");
-      setCategories(response.data.categories);
-    } catch (error) {
-      console.error(error);
-      setError("Failed to load categories. Please try again later.");
-    }
-  };
+    dispatch(fetchProducts());
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    fetchProducts(search);
+    dispatch(fetchProducts(search));
   };
 
   return (
@@ -66,17 +49,25 @@ export default function HomePage() {
           handleSearch={handleSearch}
           search={search}
           setSearch={setSearch}
-          fetchProducts={fetchProducts}
+          fetchProducts={() => dispatch(fetchProducts(""))}
         />
 
         {/* Products Section */}
-        <Products loading={loading} error={error} products={products} />
+        <Products
+          loading={productsLoading}
+          error={productsError}
+          products={products}
+        />
 
         {/* Banner Section */}
         <Banner />
 
         {/* Categories Section */}
-        <Categories loading={loading} error={error} categories={categories} />
+        <Categories
+          loading={categoriesLoading}
+          error={categoriesError}
+          categories={categories}
+        />
 
         {/* Free Returns and More Section */}
         <MoreSection />

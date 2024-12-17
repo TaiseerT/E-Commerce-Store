@@ -16,7 +16,7 @@ export async function PATCH(req) {
     let fileName;
     if (image && image instanceof File) {
       const uploadDir = path.join(process.cwd(), "public", "uploads");
-      fileName = `${Date.now()}-${image.name}`;
+      fileName = `${image.name}`;
       const absoluteFilePath = path.join(uploadDir, fileName);
 
       const fileBuffer = await image.arrayBuffer();
